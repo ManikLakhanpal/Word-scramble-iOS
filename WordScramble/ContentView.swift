@@ -11,6 +11,7 @@ struct ContentView: View {
     @State private var usedWords = [String]()
     @State private var rootWord = ""
     @State private var newWord = ""
+    @State private var toolBarText = "Start"
     
     @State private var errorTitle = ""
     @State private var errorMessage = ""
@@ -20,10 +21,17 @@ struct ContentView: View {
         NavigationStack {
             List {
                 Section {
-                    TextField("Enter your word", text: $newWord)
-                        .textInputAutocapitalization(.never)
-                        .onSubmit(addNewWord)
-                        .onAppear(perform: startGame)
+                    HStack {
+                        TextField("Enter your word", text: $newWord)
+                            .textInputAutocapitalization(.never)
+                            .onSubmit(addNewWord)
+                            .onAppear(perform: startGame)
+                    }
+                    HStack {
+                        Text("Your Score")
+                        Spacer()
+                        Text("\(usedWords.count)")
+                    }
                 }
                 
                 Section {
@@ -36,6 +44,9 @@ struct ContentView: View {
                 }
             }
             .navigationTitle(rootWord)
+            .toolbar() {
+                Button("\(toolBarText)", action: startGame)
+            }
             .alert(errorTitle, isPresented: $showingError) {} message: {
                 Text(errorMessage)
             }
@@ -46,9 +57,14 @@ struct ContentView: View {
         
         guard answer.count > 0 else {return}
         
+        guard answer.count != rootWord.count else {
+            wordError(title: "Given word used", message: "You can not enter the given word as your answer.")
+            return
+        }
+        
         // Checks if word has been used already or not
         guard isOriginal(word: answer) else {
-            wordError(title: "Word used already", message: "enter a word that hasn't been used yet.")
+            wordError(title: "Word used already", message: "Enter a word that hasn't been used yet.")
             return
         }
         
@@ -74,6 +90,12 @@ struct ContentView: View {
     }
     
     func startGame() {
+        if toolBarText == "Start" {
+            toolBarText = "Restart"
+        }
+        
+        usedWords = [String]()
+        
         if let startWordURL = Bundle.main.url(forResource: "start", withExtension: "txt") {
             if let startWords = try? String(contentsOf: startWordURL) {
                 let allWords = startWords.components(separatedBy: "\n")
@@ -91,6 +113,7 @@ struct ContentView: View {
     func isPossible(word: String) -> Bool {
         var tempWord = rootWord
         
+        // checks the position of the first occurence of words and removes it from the rootWord.
         for letter in word {
             if let pos = tempWord.firstIndex(of: letter) {
                 tempWord.remove(at: pos)
@@ -105,7 +128,11 @@ struct ContentView: View {
     func isReal(word: String) -> Bool {
         let checker = UITextChecker()
         let range = NSRange(location: 0, length: word.utf16.count)
-        let misspelledRange = checker.rangeOfMisspelledWord(in: word, range: range, startingAt: 0, wrap: false, language: "en")
+        let misspelledRange = checker.rangeOfMisspelledWord(in: word, 
+                                                            range: range,
+                                                            startingAt: 0,
+                                                            wrap: false,
+                                                            language: "en")
         
         return misspelledRange.location == NSNotFound
     }
