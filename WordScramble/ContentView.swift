@@ -17,16 +17,21 @@ struct ContentView: View {
             List {
                 Section {
                     TextField("Enter your word", text: $newWord)
+                        .textInputAutocapitalization(.never)
+                        .onSubmit(addNewWord)
+                        .onAppear(perform: startGame)
                 }
                 
                 Section {
                     ForEach(usedWords, id:\.self) { word in
-                        Text(word)
+                        HStack {
+                            Image(systemName: "\(word.count).circle")
+                            Text(word)
+                        }
                     }
                 }
             }
             .navigationTitle(rootWord)
-            .onSubmit(addNewWord)
         }
     }
     func addNewWord() {
@@ -34,8 +39,21 @@ struct ContentView: View {
         
         guard answer.count > 0 else {return}
         
-        usedWords.insert(answer, at: 0)
+        withAnimation {
+            usedWords.insert(answer, at: 0)
+        }
         newWord = ""
+    }
+    
+    func startGame() {
+        if let startWordURL = Bundle.main.url(forResource: "start", withExtension: "txt") {
+            if let startWords = try? String(contentsOf: startWordURL) {
+                let allWords = startWords.components(separatedBy: "\n")
+                rootWord = allWords.randomElement() ?? "silkworm"
+                return
+            }
+        }
+        fatalError("Could not load start.txt form the bundle.")
     }
     
 }
