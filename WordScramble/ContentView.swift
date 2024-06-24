@@ -26,6 +26,7 @@ struct ContentView: View {
                             .textInputAutocapitalization(.never)
                             .onSubmit(addNewWord)
                             .onAppear(perform: startGame)
+                            .autocorrectionDisabled(true)
                     }
                     HStack {
                         Text("Your Score")
